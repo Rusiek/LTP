@@ -4,6 +4,8 @@ import sys
 import warnings
 from typing import Union
 
+import sparsing
+
 from data_loading import DATASET_NAMES
 from perform_experiment import perform_experiment
 
@@ -153,23 +155,59 @@ if __name__ == "__main__":
     else:
         datasets = [args.dataset_name]
 
-    for dataset_name in DATASET_NAMES:
-        print(dataset_name)
-        acc_mean, acc_stddev = perform_experiment(
-            dataset_name=dataset_name,
-            degree_sum=args.degree_sum,
-            shortest_paths=args.shortest_paths,
-            edge_betweenness=args.edge_betweenness,
-            jaccard_index=args.jaccard_index,
-            local_degree_score=args.local_degree_score,
-            n_bins=args.n_bins,
-            normalization=args.normalization,
-            aggregation=args.aggregation,
-            log_degree=args.log_degree,
-            model_type=args.model_type,
-            tune_feature_extraction_hyperparams=args.tune_feature_extraction_hyperparams,
-            tune_model_hyperparams=args.tune_model_hyperparams,
-            use_features_cache=args.use_features_cache,
-            verbose=args.verbose,
-        )
-        print(f"Accuracy: {100 * acc_mean:.2f} +- {100 * acc_stddev:.2f}")
+    attemtps = 10
+    for dataset_name in datasets:
+        for power in [0.02, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.98]:
+            for algorithm, algorithm_name in [(sparsing.SparseRng(percentage=power), "SparseRng")]:
+                acc_mean, acc_stddev = None, None
+                for attempt in range(attemtps):
+                    print(f'Attempt {attempt + 1} of {attemtps}')
+                    print(dataset_name)
+                    with open(f'exp.csv', 'a') as f:
+                        f.write(f'{dataset_name},{algorithm_name},{power},')
+                    if attempt < 2:
+                        acc_mean, acc_stddev = perform_experiment(
+                            dataset_name=dataset_name,
+                            degree_sum=args.degree_sum,
+                            shortest_paths=args.shortest_paths,
+                            edge_betweenness=args.edge_betweenness,
+                            jaccard_index=args.jaccard_index,
+                            local_degree_score=args.local_degree_score,
+                            n_bins=args.n_bins,
+                            normalization=args.normalization,
+                            aggregation=args.aggregation,
+                            log_degree=args.log_degree,
+                            model_type=args.model_type,
+                            tune_feature_extraction_hyperparams=args.tune_feature_extraction_hyperparams,
+                            tune_model_hyperparams=args.tune_model_hyperparams,
+                            use_features_cache=args.use_features_cache,
+                            verbose=args.verbose,
+                            sparsing_algorithm=algorithm,
+                        )
+                    else:
+                        perform_experiment(
+                            dataset_name=dataset_name,
+                            degree_sum=args.degree_sum,
+                            shortest_paths=args.shortest_paths,
+                            edge_betweenness=args.edge_betweenness,
+                            jaccard_index=args.jaccard_index,
+                            local_degree_score=args.local_degree_score,
+                            n_bins=args.n_bins,
+                            normalization=args.normalization,
+                            aggregation=args.aggregation,
+                            log_degree=args.log_degree,
+                            model_type=args.model_type,
+                            tune_feature_extraction_hyperparams=args.tune_feature_extraction_hyperparams,
+                            tune_model_hyperparams=args.tune_model_hyperparams,
+                            use_features_cache=args.use_features_cache,
+                            verbose=args.verbose,
+                            sparsing_algorithm=algorithm,
+                            break_after_feature_extraction=True,
+                        )
+                    print(f"Accuracy: {100 * acc_mean:.2f} +- {100 * acc_stddev:.2f}")
+                    with open(f'exp.csv', 'a') as f:
+                        f.write(f'{round(100 * acc_mean, 2)},')
+                        f.write(f'{round(100 * acc_stddev, 2)}\n')
+                        
+                    # remove dir for cached features
+                    os.system("rm -rf features_cache")

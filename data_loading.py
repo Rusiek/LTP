@@ -2,6 +2,8 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
+from sparsing import SparseRng
+
 from torch_geometric.datasets import TUDataset
 
 DATASETS_DIR = Path("datasets")
@@ -15,7 +17,7 @@ DATASET_NAMES = [
     "IMDB-MULTI",
     "REDDIT-BINARY",
     "REDDIT-MULTI-5K",
-    "COLLAB",
+    #"COLLAB",
 ]
 
 
@@ -39,9 +41,10 @@ def load_dataset_splits(dataset_name: str) -> list[DatasetSplit]:
     return splits
 
 
-def load_dataset(dataset_name: str) -> TUDataset:
+def load_dataset(dataset_name: str, algorithm) -> TUDataset:
     return TUDataset(
         root=str(DATASETS_DIR),
+        transform=algorithm,
         name=dataset_name,
         use_node_attr=True,
         use_edge_attr=True,

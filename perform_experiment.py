@@ -11,6 +11,7 @@ from feature_extraction_hyperparams_tuning import (
 )
 from models import get_model
 
+from time import time
 
 def perform_experiment(
     dataset_name: str,
@@ -26,11 +27,20 @@ def perform_experiment(
     model_type: str = "RandomForest",
     tune_feature_extraction_hyperparams: bool = False,
     tune_model_hyperparams: bool = False,
-    use_features_cache: bool = True,
+    use_features_cache: bool = False, #True,
     verbose: bool = False,
+    sparsing_algorithm = None,
+    break_after_feature_extraction = False,
 ):
-    dataset = load_dataset(dataset_name)
+    
+    start_time = time()
+    dataset = load_dataset(dataset_name, sparsing_algorithm)
+    end_time = time()
+    with open(f'exp.csv', 'a') as f:
+        f.write("{:e},".format(end_time - start_time))
+    print("Loading + sparsing time:", round(end_time - start_time, 3), "seconds")
 
+    start_time = time()
     if use_features_cache:
         features = try_loading_cached_features(
             dataset_name,
@@ -64,7 +74,14 @@ def perform_experiment(
             jaccard_index=jaccard_index,
             local_degree_score=local_degree_score,
         )
+    end_time = time()
+    with open(f'exp.csv', 'a') as f:
+        f.write("{:e},".format(end_time - start_time))
+    print("Feature extraction time: ", round(end_time - start_time, 3), "seconds")
 
+    if break_after_feature_extraction:
+        return
+    
     y = np.array(dataset.data.y)
 
     # free memory - the original dataset will not be used anymore,
