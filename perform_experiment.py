@@ -32,13 +32,12 @@ def perform_experiment(
     sparsing_algorithm = None,
     break_after_feature_extraction = False,
 ):
-    
     start_time = time()
     dataset = load_dataset(dataset_name, sparsing_algorithm)
     end_time = time()
-    with open(f'exp.csv', 'a') as f:
+    print("Loading + sparsification time: ", round(end_time - start_time, 3), "seconds")
+    with open(f'exp-tune.csv', 'a') as f:
         f.write("{:e},".format(end_time - start_time))
-    print("Loading + sparsing time:", round(end_time - start_time, 3), "seconds")
 
     start_time = time()
     if use_features_cache:
@@ -75,7 +74,7 @@ def perform_experiment(
             local_degree_score=local_degree_score,
         )
     end_time = time()
-    with open(f'exp.csv', 'a') as f:
+    with open(f'exp-tune.csv', 'a') as f:
         f.write("{:e},".format(end_time - start_time))
     print("Feature extraction time: ", round(end_time - start_time, 3), "seconds")
 

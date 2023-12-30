@@ -146,6 +146,7 @@ def parse_args() -> argparse.Namespace:
 
     return parser.parse_args()
 
+NORM_TAB = [-3, -2.75, -2.5, -2.25, -2]
 
 if __name__ == "__main__":
     args = parse_args()
@@ -155,15 +156,43 @@ if __name__ == "__main__":
     else:
         datasets = [args.dataset_name]
 
-    attemtps = 10
-    for dataset_name in datasets:
-        for power in [0.02, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.98]:
-            for algorithm, algorithm_name in [(sparsing.SparseRng(percentage=power), "SparseRng")]:
-                acc_mean, acc_stddev = None, None
-                for attempt in range(attemtps):
-                    print(f'Attempt {attempt + 1} of {attemtps}')
+    attemtps = 1
+    for algorithm_type, algorithm_name, powers in [
+        (None, "NoSparsification", [None]),
+        (sparsing.Random, "Rng", [(i + 1) / 100 for i in range(10)]),
+        (sparsing.ArithmeticNorm, "ArithmeticNorm", [0.003]),
+        (sparsing.GeometricNorm, "GeometricNorm", [(i + 1) / 1000 for i in range(20)]),
+        (sparsing.HarmonicNorm, "HarmonicNorm", [(i + 1) / 1000 for i in range(20)]),
+        (sparsing.Jaccard, "JaccardIndex", [0.01, 0.02, 0.04, 0.06, 0.08, 0.1]),
+        (sparsing.CommonNeighbor, "CommonNeighborIndex", [0.01, 0.02, 0.04, 0.06, 0.08, 0.1]),
+        (sparsing.PreferentialAttachment, "PreferentialAttachment", [0.01, 0.02, 0.04, 0.06, 0.08, 0.1]),
+        (sparsing.AdamicAdar, "AdamicAdar", [0.01, 0.02, 0.04, 0.06, 0.08, 0.1]),
+        (sparsing.AdjustedRand, "AdjustedRand", [0.01, 0.02, 0.04, 0.06, 0.08, 0.1]),
+        (sparsing.AlgebraicDistance, "AlgebraicDistance", [0.01, 0.02, 0.04, 0.06, 0.08, 0.1]),
+        (sparsing.Katz, "Katz", [-3, -2.5, -2, -1.5, -1]),
+        (sparsing.Jaccard, "JaccardIndex", NORM_TAB),
+        (sparsing.CommonNeighbor, "CommonNeighborIndex", NORM_TAB),
+        (sparsing.PreferentialAttachment, "PreferentialAttachment", NORM_TAB),
+        (sparsing.AdamicAdar, "AdamicAdar", NORM_TAB),
+        (sparsing.AdjustedRand, "AdjustedRand", NORM_TAB),
+        (sparsing.AlgebraicDistance, "AlgebraicDistance", NORM_TAB),
+        (sparsing.Katz, "Katz", NORM_TAB),
+        ]:
+        for power in powers:
+            algorithm = None
+            if algorithm_type is not None:
+                algorithm = algorithm_type(power=power)
+            acc_mean, acc_stddev = None, None
+            for attempt in range(attemtps):
+                for dataset_name in datasets:
+                    try:
+                        os.system("rm -rf features_cache")
+                    except:
+                        pass
+                    if attemtps > 1:
+                        print(f'Attempt {attempt + 1} of {attemtps}')
                     print(dataset_name)
-                    with open(f'exp.csv', 'a') as f:
+                    with open(f'exp-tune.csv', 'a') as f:
                         f.write(f'{dataset_name},{algorithm_name},{power},')
                     if attempt < 2:
                         acc_mean, acc_stddev = perform_experiment(
@@ -205,9 +234,6 @@ if __name__ == "__main__":
                             break_after_feature_extraction=True,
                         )
                     print(f"Accuracy: {100 * acc_mean:.2f} +- {100 * acc_stddev:.2f}")
-                    with open(f'exp.csv', 'a') as f:
+                    with open(f'exp-tune.csv', 'a') as f:
                         f.write(f'{round(100 * acc_mean, 2)},')
                         f.write(f'{round(100 * acc_stddev, 2)}\n')
-                        
-                    # remove dir for cached features
-                    os.system("rm -rf features_cache")

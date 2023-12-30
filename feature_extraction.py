@@ -19,7 +19,7 @@ from tqdm import tqdm
 from descriptors import (
     calculate_shortest_paths,
     calculate_edge_betweenness,
-    calculate_jaccard_index,
+    JaccardCalc,
     calculate_local_degree_score,
 )
 
@@ -80,7 +80,8 @@ def _extract_single_graph_features(
         ldp_features.append(eb)
 
     if jaccard_index:
-        ji = calculate_jaccard_index(graph)
+        JC = JaccardCalc(minmax=False, norm=False)
+        ji = JC.run(graph)
         ldp_features.append(ji)
 
     if local_degree_score:

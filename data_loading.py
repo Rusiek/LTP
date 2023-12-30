@@ -2,8 +2,6 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-from sparsing import SparseRng
-
 from torch_geometric.datasets import TUDataset
 
 DATASETS_DIR = Path("datasets")
